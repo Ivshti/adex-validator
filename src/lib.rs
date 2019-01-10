@@ -19,7 +19,7 @@ pub fn is_valid_transition(channel_deposit: &BigUint, prev: &BalanceHash, next: 
 }
 
 pub fn get_health(our_balances: &BalanceHash, new_balances: &BalanceHash) -> bool {
-    let threshold: BigUint = BigUint::from(950u32);
+    let threshold: BigUint = BigUint::from(950_u32);
     let sum_our_balance: BigUint = our_balances.values().sum();
 
     let intersect_keys: Vec<String> = our_balances.iter().filter_map(|(id, _amount)| {
@@ -37,13 +37,12 @@ pub fn get_health(our_balances: &BalanceHash, new_balances: &BalanceHash) -> boo
 
         // use an `if` rather than `min`, so that we can clone only one of the BigUint's
         if our > approved {
-            approved.clone()
-        } else {
-            our.clone()
+            return approved.clone();
         }
+        our.clone()
     }).sum();
 
-    sum_of_min * 1000u32 / sum_our_balance >= threshold
+    sum_of_min * 1000_u32 / sum_our_balance >= threshold
 }
 
 #[cfg(test)]
@@ -56,45 +55,45 @@ mod tests {
 
         #[test]
         fn sum_of_next_values_should_not_exceed_the_channel_deposit() {
-            let channel_deposit = BigUint::from(20u32);
+            let channel_deposit = BigUint::from(20_u32);
             let mut next = BalanceHash::new();
 
-            next.insert("a".to_owned(), BigUint::from(10u64));
+            next.insert("a".to_owned(), BigUint::from(10_u64));
             let prev = BalanceHash::new();
 
             assert_eq!(true, is_valid_transition(&channel_deposit, &prev, &next));
 
             // make the sum of next 30 which is > 20, it should fail the validation
-            next.insert("b".to_owned(), BigUint::from(20u64));
+            next.insert("b".to_owned(), BigUint::from(20_u64));
             assert_eq!(false, is_valid_transition(&channel_deposit, &prev, &next));
         }
 
         #[test]
         fn sum_of_next_values_should_be_ge_than_sum_of_prev_values() {
-            let channel_deposit = BigUint::from(100u32);
+            let channel_deposit = BigUint::from(100_u32);
 
             let mut next = BalanceHash::new();
-            next.insert("a".to_owned(), BigUint::from(30u64));
-            next.insert("b".to_owned(), BigUint::from(10u64));
+            next.insert("a".to_owned(), BigUint::from(30_u64));
+            next.insert("b".to_owned(), BigUint::from(10_u64));
 
             let mut prev = BalanceHash::new();
-            prev.insert("a".to_owned(), BigUint::from(30u64));
-            prev.insert("b".to_owned(), BigUint::from(10u64));
+            prev.insert("a".to_owned(), BigUint::from(30_u64));
+            prev.insert("b".to_owned(), BigUint::from(10_u64));
 
             assert_eq!(true, is_valid_transition(&channel_deposit, &prev, &next));
 
-            prev.insert("e".to_owned(), BigUint::from(20u64));
+            prev.insert("e".to_owned(), BigUint::from(20_u64));
             // no entry for "e", so it should fail t he validation
             assert_eq!(false, is_valid_transition(&channel_deposit, &prev, &next));
 
             // make the sum of prev 50 which is > 30, it should fail the validation
-            next.insert("e".to_owned(), BigUint::from(20u64));
+            next.insert("e".to_owned(), BigUint::from(20_u64));
             assert_eq!(true, is_valid_transition(&channel_deposit, &prev, &next));
 
             // make next "e" key smaller than the prev "e" key, it should fail the validation
-            *next.get_mut(&"e".to_owned()).unwrap() = BigUint::from(10u64);
+            *next.get_mut(&"e".to_owned()).unwrap() = BigUint::from(10_u64);
             // but also add another key to make the sum of next > prev!
-            next.insert("f".to_owned(), BigUint::from(30u64));
+            next.insert("f".to_owned(), BigUint::from(30_u64));
             assert_eq!(false, is_valid_transition(&channel_deposit, &prev, &next));
         }
     }
@@ -107,8 +106,8 @@ mod tests {
 
         #[test]
         fn approved_balance_equals_to_out_accounting_and_is_healthy() {
-            let our_amount = BigUint::from(50u64);
-            let approved_amount = BigUint::from(50u64);
+            let our_amount = BigUint::from(50_u64);
+            let approved_amount = BigUint::from(50_u64);
 
             let mut our = BalanceHash::new();
             our.insert("a".to_owned(), our_amount);
@@ -121,8 +120,8 @@ mod tests {
 
         #[test]
         fn approved_balance_greater_to_out_accounting_and_is_healthy() {
-            let our_amount: BigUint = BigUint::from(50u64);
-            let approved_amount = BigUint::from(60u64);
+            let our_amount: BigUint = BigUint::from(50_u64);
+            let approved_amount = BigUint::from(60_u64);
 
             let mut our = BalanceHash::new();
             our.insert("a".to_owned(), our_amount);
@@ -135,7 +134,7 @@ mod tests {
 
         #[test]
         fn approved_balance_has_less_than_our_accounting_but_is_healthy_because_of_margin() {
-            let our_amount: BigUint = BigUint::from(80u64);
+            let our_amount: BigUint = BigUint::from(80_u64);
             let approved_amount = BigUint::from(79u64);
 
             let mut our = BalanceHash::new();
@@ -149,8 +148,8 @@ mod tests {
 
         #[test]
         fn approved_balance_has_less_than_our_accounting_and_is_unhealthy() {
-            let our_amount: BigUint = BigUint::from(80u64);
-            let approved_amount = BigUint::from(70u64);
+            let our_amount: BigUint = BigUint::from(80_u64);
+            let approved_amount = BigUint::from(70_u64);
 
             let mut our = BalanceHash::new();
             our.insert("a".to_owned(), our_amount);
@@ -166,11 +165,11 @@ mod tests {
             let mut our = BalanceHash::new();
             our.insert("a".to_owned(), BigUint::from(55u64));
             our.insert("b".to_owned(), BigUint::from(5u64));
-            our.insert("c".to_owned(), BigUint::from(40u64));
+            our.insert("c".to_owned(), BigUint::from(40_u64));
 
             let mut approved = BalanceHash::new();
-            approved.insert("a".to_owned(), BigUint::from(70u64));
-            approved.insert("c".to_owned(), BigUint::from(40u64));
+            approved.insert("a".to_owned(), BigUint::from(70_u64));
+            approved.insert("c".to_owned(), BigUint::from(40_u64));
 
             // sum of mins 95 is 95% of 100 => not healthy
             assert_eq!(true, get_health(&our, &approved));
@@ -179,13 +178,13 @@ mod tests {
         #[test]
         fn list_of_approved_balances_has_less_than_our_accounting_and_is_unhealthy() {
             let mut our = BalanceHash::new();
-            our.insert("a".to_owned(), BigUint::from(10u64));
-            our.insert("b".to_owned(), BigUint::from(20u64));
-            our.insert("c".to_owned(), BigUint::from(30u64));
+            our.insert("a".to_owned(), BigUint::from(10_u64));
+            our.insert("b".to_owned(), BigUint::from(20_u64));
+            our.insert("c".to_owned(), BigUint::from(30_u64));
 
             let mut approved = BalanceHash::new();
-            approved.insert("a".to_owned(), BigUint::from(20u64));
-            approved.insert("c".to_owned(), BigUint::from(20u64));
+            approved.insert("a".to_owned(), BigUint::from(20_u64));
+            approved.insert("c".to_owned(), BigUint::from(20_u64));
 
             // sum of mins 30 is 50% of 60 => not healthy
             assert_eq!(false, get_health(&our, &approved));
