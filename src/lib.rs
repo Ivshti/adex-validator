@@ -22,13 +22,7 @@ pub fn get_health(our: &BalanceHash, approved: &BalanceHash) -> bool {
     let threshold: BigUint = BigUint::from(950_u32);
     let sum_our_balance: BigUint = our.values().sum();
 
-    let intersect_keys: Vec<&String> = our.keys().filter_map(|id| {
-        if approved.contains_key(id) {
-            return Some(id);
-        }
-
-        None
-    }).collect();
+    let intersect_keys: Vec<&String> = our.keys().filter(|&id| approved.contains_key(id)).collect();
 
     let sum_of_min: BigUint = intersect_keys.iter().map(|key| {
         // return the minimum of the two values
