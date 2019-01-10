@@ -1,4 +1,6 @@
-# AdEx validator implementation [![Build Status](https://travis-ci.org/elpiel/adex-validator.svg?branch=master)](https://travis-ci.org/elpiel/adex-validator)
+# AdEx validator implementation [![Build Status](https://travis-ci.org/elpiel/adex-validator.svg?branch=master)](https://travis-ci.org/elpiel/adex-validator) [![codecov](https://codecov.io/gh/elpiel/adex-validator/branch/master/graph/badge.svg)](https://codecov.io/gh/elpiel/adex-validator)
+
+
 
 This is a repository implementing the is_healthy and is_valid_transaction as an assignment from AdEx.
 
