@@ -8,6 +8,11 @@ matrix:
     - rust: nightly
   fast_finish: true
 cache: cargo
+before_script:
+  - rustup component add clippy
+scripts:
+    - cargo clippy --all-targets --all-features -- -D warnings
+    - cargo test
 addons:
   apt:
     packages:
