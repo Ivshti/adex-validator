@@ -7,20 +7,18 @@ type BalanceHash = HashMap<String, BigUint>;
 pub fn is_valid_transition(channel_deposit: &BigUint, prev: &BalanceHash, next: &BalanceHash) -> bool {
     let next_sum: BigUint = next.values().sum();
 
-    if &next_sum >= channel_deposit {
+    if next_sum >= *channel_deposit {
         return false;
     }
 
-    let prev_sum: BigUint = prev.values().sum();
-
-    if prev_sum > next_sum {
+    if prev.values().sum::<BigUint>() > next_sum {
         return false;
     }
 
     prev.iter().all(|(id, val)| next.contains_key(id) && next.get(id).unwrap() >= val)
 }
 
-pub fn get_health(our_balances: BalanceHash, new_balances: BalanceHash) -> bool {
+pub fn get_health(our_balances: &BalanceHash, new_balances: &BalanceHash) -> bool {
     let threshold: BigUint = BigUint::from(950u32);
     let sum_our_balance: BigUint = our_balances.values().sum();
 
@@ -34,10 +32,15 @@ pub fn get_health(our_balances: BalanceHash, new_balances: BalanceHash) -> bool 
 
     let sum_of_min: BigUint = intersect_keys.iter().map(|key| {
         // return the minimum of the two values
-        let our = our_balances.get(key).unwrap().clone();
-        let approved = new_balances.get(key).unwrap().clone();
+        let our = our_balances.get(key).unwrap();
+        let approved = new_balances.get(key).unwrap();
 
-        BigUint::min(our, approved)
+        // use an `if` rather than `min`, so that we can clone only one of the BigUint's
+        if our > approved {
+            approved.clone()
+        } else {
+            our.clone()
+        }
     }).sum();
 
     sum_of_min * 1000u32 / sum_our_balance >= threshold
@@ -113,7 +116,7 @@ mod tests {
             let mut approved = BalanceHash::new();
             approved.insert("a".to_owned(), approved_amount);
 
-            assert_eq!(true, get_health(our, approved));
+            assert_eq!(true, get_health(&our, &approved));
         }
 
         #[test]
@@ -127,7 +130,7 @@ mod tests {
             let mut approved = BalanceHash::new();
             approved.insert("a".to_owned(), approved_amount);
 
-            assert_eq!(true, get_health(our, approved));
+            assert_eq!(true, get_health(&our, &approved));
         }
 
         #[test]
@@ -141,7 +144,7 @@ mod tests {
             let mut approved = BalanceHash::new();
             approved.insert("a".to_owned(), approved_amount);
 
-            assert_eq!(true, get_health(our, approved));
+            assert_eq!(true, get_health(&our, &approved));
         }
 
         #[test]
@@ -155,7 +158,7 @@ mod tests {
             let mut approved = BalanceHash::new();
             approved.insert("a".to_owned(), approved_amount);
 
-            assert_eq!(false, get_health(our, approved));
+            assert_eq!(false, get_health(&our, &approved));
         }
 
         #[test]
@@ -170,7 +173,7 @@ mod tests {
             approved.insert("c".to_owned(), BigUint::from(40u64));
 
             // sum of mins 95 is 95% of 100 => not healthy
-            assert_eq!(true, get_health(our, approved));
+            assert_eq!(true, get_health(&our, &approved));
         }
 
         #[test]
@@ -185,7 +188,7 @@ mod tests {
             approved.insert("c".to_owned(), BigUint::from(20u64));
 
             // sum of mins 30 is 50% of 60 => not healthy
-            assert_eq!(false, get_health(our, approved));
+            assert_eq!(false, get_health(&our, &approved));
         }
     }
 }
