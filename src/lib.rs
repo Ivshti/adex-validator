@@ -18,13 +18,13 @@ pub fn is_valid_transition(channel_deposit: &BigUint, prev: &BalanceHash, next: 
     prev.iter().all(|(id, val)| next.contains_key(id) && next.get(id).unwrap() >= val)
 }
 
-pub fn get_health(our_balances: &BalanceHash, new_balances: &BalanceHash) -> bool {
+pub fn get_health(our: &BalanceHash, approved: &BalanceHash) -> bool {
     let threshold: BigUint = BigUint::from(950_u32);
-    let sum_our_balance: BigUint = our_balances.values().sum();
+    let sum_our_balance: BigUint = our.values().sum();
 
-    let intersect_keys: Vec<String> = our_balances.iter().filter_map(|(id, _amount)| {
-        if new_balances.contains_key(id) {
-            return Some(id.clone());
+    let intersect_keys: Vec<&String> = our.keys().filter_map(|id| {
+        if approved.contains_key(id) {
+            return Some(id);
         }
 
         None
@@ -32,13 +32,14 @@ pub fn get_health(our_balances: &BalanceHash, new_balances: &BalanceHash) -> boo
 
     let sum_of_min: BigUint = intersect_keys.iter().map(|key| {
         // return the minimum of the two values
-        let our = our_balances.get(key).unwrap();
-        let approved = new_balances.get(key).unwrap();
+        let our = our.get(key.as_str()).unwrap();
+        let approved = approved.get(key.as_str()).unwrap();
 
         // use an `if` rather than `min`, so that we can clone only one of the BigUint's
         if our > approved {
             return approved.clone();
         }
+
         our.clone()
     }).sum();
 
@@ -106,87 +107,55 @@ mod tests {
 
         #[test]
         fn approved_balance_equals_to_out_accounting_and_is_healthy() {
-            let our_amount = BigUint::from(50_u64);
-            let approved_amount = BigUint::from(50_u64);
-
             let mut our = BalanceHash::new();
-            our.insert("a".to_owned(), our_amount);
+            our.insert("a".to_owned(), BigUint::from(50_u64));
+            our.insert("b".to_owned(), BigUint::from(150_u64));
 
             let mut approved = BalanceHash::new();
-            approved.insert("a".to_owned(), approved_amount);
+            approved.insert("a".to_owned(), BigUint::from(50_u64));
+            approved.insert("b".to_owned(), BigUint::from(150_u64));
 
             assert_eq!(true, get_health(&our, &approved));
         }
 
         #[test]
-        fn approved_balance_greater_to_out_accounting_and_is_healthy() {
-            let our_amount: BigUint = BigUint::from(50_u64);
-            let approved_amount = BigUint::from(60_u64);
-
+        fn approved_balance_greater_to_our_accounting_and_is_healthy() {
             let mut our = BalanceHash::new();
-            our.insert("a".to_owned(), our_amount);
+            our.insert("a".to_owned(), BigUint::from(10_u64));
+            our.insert("b".to_owned(), BigUint::from(20_u64));
 
             let mut approved = BalanceHash::new();
-            approved.insert("a".to_owned(), approved_amount);
+            approved.insert("a".to_owned(), BigUint::from(100_u64));
+            approved.insert("b".to_owned(), BigUint::from(200_u64));
 
             assert_eq!(true, get_health(&our, &approved));
         }
 
         #[test]
         fn approved_balance_has_less_than_our_accounting_but_is_healthy_because_of_margin() {
-            let our_amount: BigUint = BigUint::from(80_u64);
-            let approved_amount = BigUint::from(79u64);
-
             let mut our = BalanceHash::new();
-            our.insert("a".to_owned(), our_amount);
+            our.insert("a".to_owned(), BigUint::from(84_u64));
+            our.insert("b".to_owned(), BigUint::from(1_u64));
+            our.insert("c".to_owned(), BigUint::from(15_u64));
 
             let mut approved = BalanceHash::new();
-            approved.insert("a".to_owned(), approved_amount);
+            approved.insert("a".to_owned(), BigUint::from(83_u64));
+            approved.insert("c".to_owned(), BigUint::from(50_u64));
 
+            // The sum of the mins is 98, when then sum of Our is 100
             assert_eq!(true, get_health(&our, &approved));
         }
 
         #[test]
         fn approved_balance_has_less_than_our_accounting_and_is_unhealthy() {
-            let our_amount: BigUint = BigUint::from(80_u64);
-            let approved_amount = BigUint::from(70_u64);
-
             let mut our = BalanceHash::new();
-            our.insert("a".to_owned(), our_amount);
-
-            let mut approved = BalanceHash::new();
-            approved.insert("a".to_owned(), approved_amount);
-
-            assert_eq!(false, get_health(&our, &approved));
-        }
-
-        #[test]
-        fn list_of_approved_balance_has_less_than_our_accounting_but_is_healthy_because_of_margin() {
-            let mut our = BalanceHash::new();
-            our.insert("a".to_owned(), BigUint::from(55u64));
-            our.insert("b".to_owned(), BigUint::from(5u64));
-            our.insert("c".to_owned(), BigUint::from(40_u64));
+            our.insert("a".to_owned(), BigUint::from(80_u64));
+            our.insert("b".to_owned(), BigUint::from(90_u64));
 
             let mut approved = BalanceHash::new();
             approved.insert("a".to_owned(), BigUint::from(70_u64));
-            approved.insert("c".to_owned(), BigUint::from(40_u64));
+            approved.insert("b".to_owned(), BigUint::from(70_u64));
 
-            // sum of mins 95 is 95% of 100 => not healthy
-            assert_eq!(true, get_health(&our, &approved));
-        }
-
-        #[test]
-        fn list_of_approved_balances_has_less_than_our_accounting_and_is_unhealthy() {
-            let mut our = BalanceHash::new();
-            our.insert("a".to_owned(), BigUint::from(10_u64));
-            our.insert("b".to_owned(), BigUint::from(20_u64));
-            our.insert("c".to_owned(), BigUint::from(30_u64));
-
-            let mut approved = BalanceHash::new();
-            approved.insert("a".to_owned(), BigUint::from(20_u64));
-            approved.insert("c".to_owned(), BigUint::from(20_u64));
-
-            // sum of mins 30 is 50% of 60 => not healthy
             assert_eq!(false, get_health(&our, &approved));
         }
     }
