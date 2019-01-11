@@ -15,7 +15,9 @@ pub fn is_valid_transition(channel_deposit: &BigUint, prev: &BalanceHash, next: 
         return false;
     }
 
-    prev.iter().all(|(id, val)| next.get(id).map_or(false, |next_val| next_val >= val))
+    prev.iter().all(|(id, val)| {
+        next.get(id).map_or(false, |next_val| next_val >= val)
+    })
 }
 
 pub fn get_health(our: &BalanceHash, approved: &BalanceHash) -> bool {
@@ -24,11 +26,11 @@ pub fn get_health(our: &BalanceHash, approved: &BalanceHash) -> bool {
 
     let intersect_keys = our.keys().filter(|&id| approved.contains_key(id));
 
-    let sum_of_min: BigUint = intersect_keys.map(|key| {
-        // return the minimum of the two values
-        let our = our.get(key.as_str()).unwrap();
-        let approved = approved.get(key.as_str()).unwrap();
-
+    let sum_of_min: BigUint = our.iter()
+    .filter_map(|(id, our_val)| {
+        Some((our_val, approved.get(id)?))
+    })
+    .map(|(our, approved)| {
         // use an `if` rather than `min`, so that we can clone only one of the BigUint's
         if our > approved {
             approved.clone()
