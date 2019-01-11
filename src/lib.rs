@@ -22,19 +22,19 @@ pub fn get_health(our: &BalanceHash, approved: &BalanceHash) -> bool {
     let threshold: BigUint = BigUint::from(950_u32);
     let sum_our_balance: BigUint = our.values().sum();
 
-    let intersect_keys: Vec<&String> = our.keys().filter(|&id| approved.contains_key(id)).collect();
+    let intersect_keys = our.keys().filter(|&id| approved.contains_key(id));
 
-    let sum_of_min: BigUint = intersect_keys.iter().map(|key| {
+    let sum_of_min: BigUint = intersect_keys.map(|key| {
         // return the minimum of the two values
         let our = our.get(key.as_str()).unwrap();
         let approved = approved.get(key.as_str()).unwrap();
 
         // use an `if` rather than `min`, so that we can clone only one of the BigUint's
         if our > approved {
-            return approved.clone();
+            approved.clone()
+        } else {
+            our.clone()
         }
-
-        our.clone()
     }).sum();
 
     sum_of_min * 1000_u32 / sum_our_balance >= threshold
