@@ -24,8 +24,6 @@ pub fn get_health(our: &BalanceHash, approved: &BalanceHash) -> bool {
     let threshold: BigUint = BigUint::from(950_u32);
     let sum_our_balance: BigUint = our.values().sum();
 
-    let intersect_keys = our.keys().filter(|&id| approved.contains_key(id));
-
     let sum_of_min: BigUint = our.iter()
     .filter_map(|(id, our_val)| {
         Some((our_val, approved.get(id)?))
