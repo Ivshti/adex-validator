@@ -15,7 +15,7 @@ pub fn is_valid_transition(channel_deposit: &BigUint, prev: &BalanceHash, next: 
         return false;
     }
 
-    prev.iter().all(|(id, val)| next.contains_key(id) && next.get(id).unwrap() >= val)
+    prev.iter().all(|(id, val)| next.get(id).map_or(false, |next_val| next_val >= val))
 }
 
 pub fn get_health(our: &BalanceHash, approved: &BalanceHash) -> bool {
